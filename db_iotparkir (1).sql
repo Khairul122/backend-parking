@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 14, 2024 at 08:24 AM
+-- Generation Time: Dec 18, 2024 at 02:55 PM
 -- Server version: 8.0.30
--- PHP Version: 7.4.3
+-- PHP Version: 7.4.1
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -29,21 +29,25 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `parkir` (
   `id` int NOT NULL,
-  `plat` varchar(20) NOT NULL,
-  `biaya` int NOT NULL,
-  `waktu` datetime NOT NULL,
-  `status` varchar(50) NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP
+  `id_parkir` varchar(50) NOT NULL,
+  `status` varchar(20) NOT NULL,
+  `plat_nomor` varchar(20) NOT NULL,
+  `waktu_mulai` timestamp NULL DEFAULT NULL,
+  `waktu_selesai` timestamp NULL DEFAULT NULL,
+  `durasi` int DEFAULT NULL,
+  `biaya` int DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 --
 -- Dumping data for table `parkir`
 --
 
-INSERT INTO `parkir` (`id`, `plat`, `biaya`, `waktu`, `status`, `created_at`) VALUES
-(1, 'AB123CD', 5000, '2024-12-14 14:00:00', 'masuk', '2024-12-14 07:54:42'),
-(2, 'AB123CE', 5000, '2024-12-14 08:14:55', 'masuk', '2024-12-14 08:14:55'),
-(3, 'AB123CH', 5000, '2024-12-14 15:21:26', 'masuk', '2024-12-14 08:21:26');
+INSERT INTO `parkir` (`id`, `id_parkir`, `status`, `plat_nomor`, `waktu_mulai`, `waktu_selesai`, `durasi`, `biaya`) VALUES
+(262, 'ULTRASONIC_01', 'Tidak Parkir', 'BA 1010 AB', '2024-12-18 14:47:55', '2024-12-18 14:48:22', 27, 2000),
+(263, 'ULTRASONIC_01', 'Tidak Parkir', 'BA 1010 AB', '2024-12-18 14:48:00', '2024-12-18 14:48:16', 16, 2000),
+(264, 'ULTRASONIC_01', 'Tidak Parkir', 'BA 1010 AB', '2024-12-18 14:48:05', '2024-12-18 14:48:11', 6, 2000),
+(265, 'ULTRASONIC_01', 'Tidak Parkir', 'BA 1010 AB', '2024-12-18 14:48:49', '2024-12-18 14:48:54', 5, 2000),
+(266, 'ULTRASONIC_01', 'Tidak Parkir', 'BA 1010 AB', '2024-12-18 14:54:00', '2024-12-18 14:54:05', 5, 2000);
 
 -- --------------------------------------------------------
 
@@ -115,7 +119,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `parkir`
 --
 ALTER TABLE `parkir`
-  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=267;
 
 --
 -- AUTO_INCREMENT for table `servo`
