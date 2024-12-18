@@ -4,95 +4,66 @@ header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
-// Set timezone
-date_default_timezone_set('Asia/Jakarta');
-
 require_once 'database.php';
-
 $db = new Database();
-$conn = $db->getConnection();
-
-// Set timezone MySQL
-$conn->query("SET time_zone = '+07:00'");
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method == 'POST') {
-    try {
-        // Ambil dan decode JSON input
-        $jsonInput = file_get_contents('php://input');
-        $input = json_decode($jsonInput, true);
+    $conn = $db->getConnection();
+    $data = file_get_contents("php://input");
+    $json = json_decode($data, true);
 
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception('Invalid JSON format');
-        }
-
-        // Validasi input JSON
-        if (!isset($input['plat']) || !isset($input['biaya']) || !isset($input['status'])) {
-            throw new Exception('Missing required fields');
-        }
-
-        // Sanitasi input
-        $plat = $conn->real_escape_string($input['plat']);
-        $biaya = intval($input['biaya']);
-        $status = $conn->real_escape_string($input['status']);
+    if (isset($json['Ultrasonik'][0]['id']) && isset($json['Ultrasonik'][0]['value'])) {
+        $id_parkir = $json['Ultrasonik'][0]['id'];
+        $value = $json['Ultrasonik'][0]['value'];
+        $status = $value == 1 ? "Parkir" : "Tidak Parkir";
+        $plat_nomor = "BA 1010 AB";
         
-        // Generate waktu otomatis
-        $waktu = date('Y-m-d H:i:s');
-
-        // Cek apakah plat sudah ada
-        $queryCheck = "SELECT * FROM parkir WHERE plat = '$plat'";
-        $result = $db->query($queryCheck);
-
-        if (!$result) {
-            throw new Exception($conn->error);
-        }
-
-        if ($result->num_rows > 0) {
-            // Update data
-            $queryUpdate = "UPDATE parkir SET biaya = $biaya, waktu = '$waktu', status = '$status' WHERE plat = '$plat'";
-            if (!$db->query($queryUpdate)) {
-                throw new Exception($conn->error);
-            }
-            echo json_encode([
-                'status' => 'success', 
-                'message' => 'Data updated successfully',
-                'data' => [
-                    'plat' => $plat,
-                    'biaya' => $biaya,
-                    'waktu' => $waktu,
-                    'status' => $status
-                ]
-            ]);
+        if ($value == 1) {
+            // Jika value = 1, simpan waktu mulai
+            $sql = "INSERT INTO parkir (id_parkir, status, plat_nomor, waktu_mulai) 
+                   VALUES (?, ?, ?, CURRENT_TIMESTAMP)";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("sss", $id_parkir, $status, $plat_nomor);
         } else {
-            // Insert data baru
-            $queryInsert = "INSERT INTO parkir (plat, biaya, waktu, status) VALUES ('$plat', $biaya, '$waktu', '$status')";
-            if (!$db->query($queryInsert)) {
-                throw new Exception($conn->error);
-            }
-            echo json_encode([
-                'status' => 'success', 
-                'message' => 'Data inserted successfully',
-                'data' => [
-                    'plat' => $plat,
-                    'biaya' => $biaya,
-                    'waktu' => $waktu,
-                    'status' => $status
-                ]
-            ]);
+            // Jika value = 0, update waktu selesai, hitung durasi dan biaya
+            $sql = "UPDATE parkir 
+                   SET status = ?, 
+                       waktu_selesai = CURRENT_TIMESTAMP,
+                       durasi = TIMESTAMPDIFF(SECOND, waktu_mulai, CURRENT_TIMESTAMP),
+                       biaya = CASE 
+                           WHEN TIMESTAMPDIFF(SECOND, waktu_mulai, CURRENT_TIMESTAMP) <= 60 THEN 2000
+                           WHEN TIMESTAMPDIFF(SECOND, waktu_mulai, CURRENT_TIMESTAMP) <= 120 THEN 4000
+                           WHEN TIMESTAMPDIFF(SECOND, waktu_mulai, CURRENT_TIMESTAMP) <= 180 THEN 6000
+                           WHEN TIMESTAMPDIFF(SECOND, waktu_mulai, CURRENT_TIMESTAMP) <= 240 THEN 8000
+                           WHEN TIMESTAMPDIFF(SECOND, waktu_mulai, CURRENT_TIMESTAMP) <= 300 THEN 10000
+                           ELSE 12000
+                       END
+                   WHERE id_parkir = ? 
+                   AND waktu_selesai IS NULL
+                   ORDER BY waktu_mulai DESC LIMIT 1";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("ss", $status, $id_parkir);
         }
 
-    } catch (Exception $e) {
+        if ($stmt->execute()) {
+            http_response_code(200);
+            echo json_encode(["message" => "Data berhasil disimpan"]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["message" => "Gagal menyimpan data"]);
+        }
+
+        $stmt->close();
+    } else {
         http_response_code(400);
-        echo json_encode([
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ]);
-    } finally {
-        $db->close();
+        echo json_encode(["message" => "Data tidak valid. Pastikan ID dan value tersedia."]);
     }
+
+    $conn->close();
 } else {
     http_response_code(405);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid request method']);
+    echo json_encode(["message" => "Metode tidak diizinkan"]);
 }
 ?>
