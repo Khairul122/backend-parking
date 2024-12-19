@@ -14,21 +14,21 @@ if ($method == 'POST') {
     $input = json_decode(file_get_contents('php://input'), true);
 
     // Validasi input
-    if (!isset($input['nama_servo']) || !isset($input['value'])) {
+    if (!isset($input['palang']) || !isset($input['value'])) {
         echo json_encode(['status' => 'error', 'message' => 'Invalid input.']);
         exit;
     }
 
-    $nama_servo = $input['nama_servo'];
+    $palang = $input['palang'];
     $value = intval($input['value']);
 
-    // Cek apakah nama_servo sudah ada di database
-    $queryCheck = "SELECT * FROM servo WHERE nama_servo = '$nama_servo'";
+    // Cek apakah palang sudah ada di database
+    $queryCheck = "SELECT * FROM servo WHERE palang = '$palang'";
     $result = $db->query($queryCheck);
 
     if ($result->num_rows > 0) {
         // Jika data ditemukan, perbarui data lama
-        $queryUpdate = "UPDATE servo SET value = $value WHERE nama_servo = '$nama_servo'";
+        $queryUpdate = "UPDATE servo SET value = $value WHERE palang = '$palang'";
         if ($db->query($queryUpdate)) {
             echo json_encode(['status' => 'success', 'message' => 'Data updated successfully.']);
         } else {
@@ -36,7 +36,7 @@ if ($method == 'POST') {
         }
     } else {
         // Jika data tidak ditemukan, masukkan data baru
-        $queryInsert = "INSERT INTO servo (nama_servo, value) VALUES ('$nama_servo', $value)";
+        $queryInsert = "INSERT INTO servo (palang, value) VALUES ('$palang', $value)";
         if ($db->query($queryInsert)) {
             echo json_encode(['status' => 'success', 'message' => 'Data inserted successfully.']);
         } else {
